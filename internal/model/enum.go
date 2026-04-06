@@ -3,10 +3,12 @@ package model
 type ConversationType string
 type ParticipantRole string
 type MessageType string
+type MessageRole string
 
 const (
 	ConversationTypePrivate ConversationType = "private"
 	ConversationTypeGroup   ConversationType = "group"
+	ConversationTypeAI      ConversationType = "ai"
 )
 
 const (
@@ -21,6 +23,12 @@ const (
 	MessageTypeSystem MessageType = "system"
 )
 
+const (
+	RoleUser      MessageRole = "user"
+	RoleAssistant MessageRole = "assistant"
+	RoleSystem    MessageRole = "system"
+)
+
 func (t MessageType) IsValid() bool {
 	switch t {
 	case MessageTypeText, MessageTypeImage, MessageTypeFile, MessageTypeSystem:
@@ -32,7 +40,16 @@ func (t MessageType) IsValid() bool {
 
 func (t ConversationType) IsValid() bool {
 	switch t {
-	case ConversationTypePrivate, ConversationTypeGroup:
+	case ConversationTypePrivate, ConversationTypeGroup, ConversationTypeAI:
+		return true
+	default:
+		return false
+	}
+}
+
+func (r MessageRole) IsValid() bool {
+	switch r {
+	case RoleUser, RoleAssistant, RoleSystem:
 		return true
 	default:
 		return false

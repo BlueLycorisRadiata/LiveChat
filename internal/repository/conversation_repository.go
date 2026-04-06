@@ -11,6 +11,7 @@ type ConversationRepository interface {
 	CreateConversation(ctx context.Context, conv *model.Conversation) (*model.Conversation, error)
 	GetConversationByID(ctx context.Context, id int64) (*model.Conversation, error)
 	GetUserConversations(ctx context.Context, userID int64) ([]model.Conversation, error)
+	UpdateConversation(ctx context.Context, id int64, userID int64, title string) (*model.Conversation, error)
 	DeleteConversation(ctx context.Context, id int64, userID int64) error
 	AddParticipant(ctx context.Context, convID int64, userID int64, role model.ParticipantRole) error
 	RemoveParticipant(ctx context.Context, convID int64, userID int64) error
@@ -37,6 +38,17 @@ func (r *conversationRepo) CreateConversation(ctx context.Context, conv *model.C
 
 	if err != nil {
 		return nil, err
+	}
+
+	// Auto-insert default AI settings for AI conversations
+	if conv.Type == model.ConversationTypeAI {
+		aiQuery := `
+			INSERT INTO conversation_ai_settings (conversation_id, model, temperature, max_tokens, system_prompt, created_at, updated_at)
+			VALUES ($1, 'nvidia/nemotron-3-super-120b-a12b:free', 0.7, 2048, '', $2, $3)`
+		_, err = r.db.ExecContext(ctx, aiQuery, conv.ID, time.Now(), time.Now())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return conv, nil
@@ -108,6 +120,26 @@ func (r *conversationRepo) DeleteConversation(ctx context.Context, id int64, use
 	}
 
 	return nil
+}
+
+func (r *conversationRepo) UpdateConversation(ctx context.Context, id int64, userID int64, title string) (*model.Conversation, error) {
+	query := `
+		UPDATE conversations
+		SET title = $1, updated_at = NOW()
+		WHERE id = $2 AND created_by = $3 AND deleted_at IS NULL
+		RETURNING id, type, title, created_by, created_at, updated_at, deleted_at`
+
+	conv := &model.Conversation{}
+	err := r.db.QueryRowContext(ctx, query, title, id, userID).Scan(
+		&conv.ID, &conv.Type, &conv.Title, &conv.CreatedBy,
+		&conv.CreatedAt, &conv.UpdatedAt, &conv.DeletedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return conv, nil
 }
 
 func (r *conversationRepo) AddParticipant(ctx context.Context, convID int64, userID int64, role model.ParticipantRole) error {

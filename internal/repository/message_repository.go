@@ -24,13 +24,13 @@ func NewMessageRepository(db DBTX) MessageRepository {
 
 func (r *messageRepo) CreateMessage(ctx context.Context, msg *model.Message) (*model.Message, error) {
 	query := `
-		INSERT INTO messages (conversation_id, sender_id, content, type, reply_to_message_id, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO messages (conversation_id, sender_id, content, type, role, reply_to_message_id, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id`
 
 	err := r.db.QueryRowContext(ctx, query,
 		msg.ConversationID, msg.SenderID, msg.Content, msg.Type,
-		msg.ReplyToMessageID, time.Now(), time.Now(),
+		msg.Role, msg.ReplyToMessageID, time.Now(), time.Now(),
 	).Scan(&msg.ID)
 
 	if err != nil {
@@ -42,11 +42,11 @@ func (r *messageRepo) CreateMessage(ctx context.Context, msg *model.Message) (*m
 
 func (r *messageRepo) GetMessagesByConversation(ctx context.Context, convID int64, limit, offset int) ([]model.Message, error) {
 	query := `
-		SELECT m.id, m.conversation_id, m.sender_id, m.content, m.type, 
+		SELECT m.id, m.conversation_id, m.sender_id, m.content, m.type, m.role,
 		       m.reply_to_message_id, m.created_at, m.updated_at, m.deleted_at,
 		       u.id, u.username, u.email
 		FROM messages m
-		JOIN users u ON m.sender_id = u.id
+		LEFT JOIN users u ON m.sender_id = u.id
 		WHERE m.conversation_id = $1 AND m.deleted_at IS NULL
 		ORDER BY m.created_at DESC
 		LIMIT $2 OFFSET $3`
@@ -60,16 +60,23 @@ func (r *messageRepo) GetMessagesByConversation(ctx context.Context, convID int6
 	var messages []model.Message
 	for rows.Next() {
 		var m model.Message
-		var u model.User
+		var userID sql.NullInt64
+		var username, email sql.NullString
 		err := rows.Scan(
-			&m.ID, &m.ConversationID, &m.SenderID, &m.Content, &m.Type,
+			&m.ID, &m.ConversationID, &m.SenderID, &m.Content, &m.Type, &m.Role,
 			&m.ReplyToMessageID, &m.CreatedAt, &m.UpdatedAt, &m.DeletedAt,
-			&u.ID, &u.Username, &u.Email,
+			&userID, &username, &email,
 		)
 		if err != nil {
 			return nil, err
 		}
-		m.Sender = &u
+		if userID.Valid {
+			m.Sender = &model.User{
+				ID:       userID.Int64,
+				Username: username.String,
+				Email:    email.String,
+			}
+		}
 		messages = append(messages, m)
 	}
 
@@ -83,14 +90,14 @@ func (r *messageRepo) GetMessagesByConversation(ctx context.Context, convID int6
 
 func (r *messageRepo) GetMessageByID(ctx context.Context, id int64) (*model.Message, error) {
 	query := `
-		SELECT id, conversation_id, sender_id, content, type, 
+		SELECT id, conversation_id, sender_id, content, type, role,
 		       reply_to_message_id, created_at, updated_at, deleted_at
 		FROM messages
 		WHERE id = $1 AND deleted_at IS NULL`
 
 	msg := &model.Message{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&msg.ID, &msg.ConversationID, &msg.SenderID, &msg.Content, &msg.Type,
+		&msg.ID, &msg.ConversationID, &msg.SenderID, &msg.Content, &msg.Type, &msg.Role,
 		&msg.ReplyToMessageID, &msg.CreatedAt, &msg.UpdatedAt, &msg.DeletedAt,
 	)
 

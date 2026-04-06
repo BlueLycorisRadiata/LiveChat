@@ -1,6 +1,7 @@
 package service
 
 import (
+	"LiveChat/config"
 	"LiveChat/internal/model"
 	"LiveChat/internal/repository"
 	"context"
@@ -8,28 +9,31 @@ import (
 )
 
 type ConversationService interface {
-	CreateConversation(ctx context.Context, userID int64, title string, participantIDs []int64, convType model.ConversationType) (*model.Conversation, error)
+	CreateConversation(ctx context.Context, userID int64, title string, participantIDs []int64, convType model.ConversationType, aiModel string) (*model.Conversation, error)
 	GetConversation(ctx context.Context, convID int64) (*model.Conversation, error)
 	GetUserConversations(ctx context.Context, userID int64) ([]model.Conversation, error)
+	UpdateConversation(ctx context.Context, convID int64, userID int64, title string) (*model.Conversation, error)
 	DeleteConversation(ctx context.Context, convID int64, userID int64) error
 	LeaveConversation(ctx context.Context, convID int64, userID int64) error
 	GetParticipants(ctx context.Context, convID int64) ([]model.ConversationParticipant, error)
 }
 
 type conversationSvc struct {
-	convRepo repository.ConversationRepository
-	msgRepo  repository.MessageRepository
+	convRepo       repository.ConversationRepository
+	msgRepo        repository.MessageRepository
+	aiSettingsRepo repository.AISettingsRepository
 }
 
-func NewConversationService(convRepo repository.ConversationRepository, msgRepo repository.MessageRepository) ConversationService {
+func NewConversationService(convRepo repository.ConversationRepository, msgRepo repository.MessageRepository, aiSettingsRepo repository.AISettingsRepository) ConversationService {
 	return &conversationSvc{
-		convRepo: convRepo,
-		msgRepo:  msgRepo,
+		convRepo:       convRepo,
+		msgRepo:        msgRepo,
+		aiSettingsRepo: aiSettingsRepo,
 	}
 }
 
-func (s *conversationSvc) CreateConversation(ctx context.Context, userID int64, title string, participantIDs []int64, convType model.ConversationType) (*model.Conversation, error) {
-	fmt.Printf("[DEBUG] Service CreateConversation userID=%d, title=%s, type=%s\n", userID, title, convType)
+func (s *conversationSvc) CreateConversation(ctx context.Context, userID int64, title string, participantIDs []int64, convType model.ConversationType, aiModel string) (*model.Conversation, error) {
+	fmt.Printf("[DEBUG] Service CreateConversation userID=%d, title=%s, type=%s, model=%s\n", userID, title, convType, aiModel)
 
 	conv := &model.Conversation{
 		Type:      convType,
@@ -38,6 +42,9 @@ func (s *conversationSvc) CreateConversation(ctx context.Context, userID int64, 
 
 	if title != "" {
 		conv.Title = &title
+	} else if convType == model.ConversationTypeAI {
+		defaultTitle := "AI Chat"
+		conv.Title = &defaultTitle
 	}
 
 	createdConv, err := s.convRepo.CreateConversation(ctx, conv)
@@ -46,20 +53,39 @@ func (s *conversationSvc) CreateConversation(ctx context.Context, userID int64, 
 		return nil, err
 	}
 
-	// Add creator as owner
 	err = s.convRepo.AddParticipant(ctx, createdConv.ID, userID, model.ParticipantRoleOwner)
 	if err != nil {
 		fmt.Printf("[DEBUG] AddParticipant error: %v\n", err)
 		return nil, err
 	}
 
-	// Add other participants
-	for _, pID := range participantIDs {
-		if pID != userID {
-			err = s.convRepo.AddParticipant(ctx, createdConv.ID, pID, model.ParticipantRoleMember)
-			if err != nil {
-				return nil, err
+	if convType != model.ConversationTypeAI {
+		for _, pID := range participantIDs {
+			if pID != userID {
+				err = s.convRepo.AddParticipant(ctx, createdConv.ID, pID, model.ParticipantRoleMember)
+				if err != nil {
+					return nil, err
+				}
 			}
+		}
+	}
+
+	if convType == model.ConversationTypeAI {
+		selectedModel := aiModel
+		if selectedModel == "" {
+			selectedModel = config.GetDefaultAIModel()
+		}
+		defaultSettings := &model.ConversationAISettings{
+			ConversationID: createdConv.ID,
+			Model:          selectedModel,
+			Temperature:    0.7,
+			MaxTokens:      2048,
+			SystemPrompt:   "",
+		}
+		err = s.aiSettingsRepo.Upsert(ctx, defaultSettings)
+		if err != nil {
+			fmt.Printf("[DEBUG] CreateAIsettings error: %v\n", err)
+			return nil, fmt.Errorf("failed to create AI settings: %w", err)
 		}
 	}
 
@@ -76,6 +102,10 @@ func (s *conversationSvc) GetUserConversations(ctx context.Context, userID int64
 
 func (s *conversationSvc) DeleteConversation(ctx context.Context, convID int64, userID int64) error {
 	return s.convRepo.DeleteConversation(ctx, convID, userID)
+}
+
+func (s *conversationSvc) UpdateConversation(ctx context.Context, convID int64, userID int64, title string) (*model.Conversation, error) {
+	return s.convRepo.UpdateConversation(ctx, convID, userID, title)
 }
 
 func (s *conversationSvc) LeaveConversation(ctx context.Context, convID int64, userID int64) error {
