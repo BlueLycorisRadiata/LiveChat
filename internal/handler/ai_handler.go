@@ -20,11 +20,7 @@ func NewAIHandler(client *ai.Client, aiSvc service.AIService) *AIHandler {
 }
 
 func (h *AIHandler) ListModels(c *gin.Context) {
-	models, err := h.client.ListModels(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
-		return
-	}
+	models := ai.GetAllowedModelsList()
 	c.JSON(http.StatusOK, gin.H{"data": models})
 }
 
@@ -110,6 +106,10 @@ func (h *AIHandler) UpdateSettings(c *gin.Context) {
 	}
 
 	if req.Model != nil {
+		if !ai.IsModelAllowed(*req.Model) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "model not allowed"})
+			return
+		}
 		current.Model = *req.Model
 	}
 	if req.Temperature != nil {

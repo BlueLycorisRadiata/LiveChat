@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"LiveChat/config"
 	"LiveChat/internal/model"
 	"LiveChat/internal/service"
 	"fmt"
@@ -25,6 +26,7 @@ type CreateConversationReq struct {
 	Title          string  `json:"title"`
 	ParticipantIDs []int64 `json:"participant_ids"`
 	Type           string  `json:"type"`
+	Model          string  `json:"model"`
 }
 
 type SendMessageReq struct {
@@ -50,7 +52,13 @@ func (h *ConversationHandler) CreateConversation(c *gin.Context) {
 		convType = model.ConversationTypeAI
 	}
 
-	conv, err := h.convService.CreateConversation(c.Request.Context(), userID, req.Title, req.ParticipantIDs, convType)
+	model := req.Model
+	if model != "" && !config.IsModelSupported(model) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported AI model"})
+		return
+	}
+
+	conv, err := h.convService.CreateConversation(c.Request.Context(), userID, req.Title, req.ParticipantIDs, convType, model)
 	if err != nil {
 		fmt.Printf("[DEBUG] CreateConversation error: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -84,6 +92,35 @@ func (h *ConversationHandler) GetConversation(c *gin.Context) {
 	conv, err := h.convService.GetConversation(c.Request.Context(), convIDInt)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "conversation not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": conv})
+}
+
+type UpdateConversationReq struct {
+	Title string `json:"title"`
+}
+
+func (h *ConversationHandler) UpdateConversation(c *gin.Context) {
+	userID := c.GetInt64("user_id")
+	convID := c.Param("id")
+	var convIDInt int64
+	_, err := fmt.Sscanf(convID, "%d", &convIDInt)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid conversation id"})
+		return
+	}
+
+	var req UpdateConversationReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	conv, err := h.convService.UpdateConversation(c.Request.Context(), convIDInt, userID, req.Title)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

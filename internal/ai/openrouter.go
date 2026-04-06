@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"LiveChat/config"
 	"bufio"
 	"bytes"
 	"context"
@@ -65,6 +66,29 @@ type ModelInfo struct {
 
 type ModelsResponse struct {
 	Data []ModelInfo `json:"data"`
+}
+
+var AllowedModels = func() map[string]bool {
+	m := make(map[string]bool)
+	for _, model := range config.SupportedAIModels {
+		m[model] = true
+	}
+	return m
+}()
+
+func IsModelAllowed(model string) bool {
+	return AllowedModels[model]
+}
+
+func GetAllowedModelsList() []ModelInfo {
+	models := []ModelInfo{}
+	for id := range AllowedModels {
+		models = append(models, ModelInfo{
+			ID:   id,
+			Name: id,
+		})
+	}
+	return models
 }
 
 type Client struct {

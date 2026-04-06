@@ -5,5 +5,8 @@
     <file url="file://$PROJECT_DIR$/db/migrations/20260326040434_add_users_table.up.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/db/migrations/20260327000000_add_conversations.down.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/db/migrations/20260327000000_add_conversations.up.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/db/migrations/20260406000000_add_ai_settings.down.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/db/migrations/20260406000000_add_ai_settings.up.sql" dialect="PostgreSQL" />
+    <file url="PROJECT" dialect="PostgreSQL" />
   </component>
 </project>

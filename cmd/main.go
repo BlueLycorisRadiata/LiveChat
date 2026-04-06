@@ -36,13 +36,13 @@ func main() {
 
 	convRepo := repository.NewConversationRepository(dbConn.GetDB())
 	msgRepo := repository.NewMessageRepository(dbConn.GetDB())
-	convSvc := service.NewConversationService(convRepo, msgRepo)
+	aiSettingsRepo := repository.NewAISettingsRepository(dbConn.GetDB())
+	convSvc := service.NewConversationService(convRepo, msgRepo, aiSettingsRepo)
 	msgSvc := service.NewMessageService(msgRepo, convRepo)
 	convHandler := handler.NewConversationHandler(convSvc, msgSvc)
 
 	// AI wiring
 	aiClient := ai.NewClient(cfg.OpenRouterAPIKey, cfg.OpenRouterBaseURL)
-	aiSettingsRepo := repository.NewAISettingsRepository(dbConn.GetDB())
 	aiSvc := service.NewAIService(aiClient, msgRepo, aiSettingsRepo, convRepo)
 	aiHandler := handler.NewAIHandler(aiClient, aiSvc)
 

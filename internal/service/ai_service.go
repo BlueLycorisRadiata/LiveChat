@@ -66,6 +66,11 @@ func (s *aiSvc) StreamReply(ctx context.Context, convID int64, userID int64, use
 		return fmt.Errorf("failed to get AI settings: %w", err)
 	}
 
+	// 3.1 Validate model is allowed
+	if !ai.IsModelAllowed(settings.Model) {
+		return fmt.Errorf("model not allowed: %s", settings.Model)
+	}
+
 	// 4. Fetch last 30 messages for context
 	history, err := s.settingsRepo.GetMessagesForAI(ctx, convID, 30)
 	if err != nil {

@@ -48,6 +48,7 @@ func InitRouter(userHandler *handler.Handler, wsHandler *ws.Handler, convHandler
 		auth.POST("/conversations", convHandler.CreateConversation)
 		auth.GET("/conversations", convHandler.GetConversations)
 		auth.GET("/conversations/:id", convHandler.GetConversation)
+		auth.PATCH("/conversations/:id", convHandler.UpdateConversation)
 		auth.DELETE("/conversations/:id", convHandler.DeleteConversation)
 		auth.POST("/conversations/:id/leave", convHandler.LeaveConversation)
 		auth.GET("/conversations/:id/messages", convHandler.GetMessages)
