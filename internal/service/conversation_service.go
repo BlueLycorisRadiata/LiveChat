@@ -38,6 +38,9 @@ func (s *conversationSvc) CreateConversation(ctx context.Context, userID int64, 
 
 	if title != "" {
 		conv.Title = &title
+	} else if convType == model.ConversationTypeAI {
+		defaultTitle := "AI Chat"
+		conv.Title = &defaultTitle
 	}
 
 	createdConv, err := s.convRepo.CreateConversation(ctx, conv)
@@ -53,12 +56,14 @@ func (s *conversationSvc) CreateConversation(ctx context.Context, userID int64, 
 		return nil, err
 	}
 
-	// Add other participants
-	for _, pID := range participantIDs {
-		if pID != userID {
-			err = s.convRepo.AddParticipant(ctx, createdConv.ID, pID, model.ParticipantRoleMember)
-			if err != nil {
-				return nil, err
+	// Add other participants (skip for AI conversations — only the creator is needed)
+	if convType != model.ConversationTypeAI {
+		for _, pID := range participantIDs {
+			if pID != userID {
+				err = s.convRepo.AddParticipant(ctx, createdConv.ID, pID, model.ParticipantRoleMember)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}

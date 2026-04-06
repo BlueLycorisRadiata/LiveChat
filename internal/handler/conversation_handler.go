@@ -46,6 +46,8 @@ func (h *ConversationHandler) CreateConversation(c *gin.Context) {
 	convType := model.ConversationTypePrivate
 	if req.Type == "group" {
 		convType = model.ConversationTypeGroup
+	} else if req.Type == "ai" {
+		convType = model.ConversationTypeAI
 	}
 
 	conv, err := h.convService.CreateConversation(c.Request.Context(), userID, req.Title, req.ParticipantIDs, convType)

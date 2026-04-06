@@ -39,6 +39,17 @@ func (r *conversationRepo) CreateConversation(ctx context.Context, conv *model.C
 		return nil, err
 	}
 
+	// Auto-insert default AI settings for AI conversations
+	if conv.Type == model.ConversationTypeAI {
+		aiQuery := `
+			INSERT INTO conversation_ai_settings (conversation_id, model, temperature, max_tokens, system_prompt, created_at, updated_at)
+			VALUES ($1, 'nvidia/nemotron-3-super-120b-a12b:free', 0.7, 2048, '', $2, $3)`
+		_, err = r.db.ExecContext(ctx, aiQuery, conv.ID, time.Now(), time.Now())
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return conv, nil
 }
 

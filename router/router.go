@@ -14,7 +14,7 @@ import (
 var r *gin.Engine
 var jwtSecret = "secret"
 
-func InitRouter(userHandler *handler.Handler, wsHandler *ws.Handler, convHandler *handler.ConversationHandler) {
+func InitRouter(userHandler *handler.Handler, wsHandler *ws.Handler, convHandler *handler.ConversationHandler, aiHandler *handler.AIHandler) {
 	r = gin.Default()
 
 	r.Use(cors.New(cors.Config{
@@ -53,6 +53,12 @@ func InitRouter(userHandler *handler.Handler, wsHandler *ws.Handler, convHandler
 		auth.GET("/conversations/:id/messages", convHandler.GetMessages)
 		auth.POST("/conversations/:id/messages", convHandler.SendMessage)
 		auth.DELETE("/conversations/:id/messages/:messageId", convHandler.DeleteMessage)
+
+		// AI routes
+		auth.GET("/ai/models", aiHandler.ListModels)
+		auth.POST("/conversations/:id/ai/stream", aiHandler.StreamMessage)
+		auth.GET("/conversations/:id/ai-settings", aiHandler.GetSettings)
+		auth.PATCH("/conversations/:id/ai-settings", aiHandler.UpdateSettings)
 	}
 }
 
