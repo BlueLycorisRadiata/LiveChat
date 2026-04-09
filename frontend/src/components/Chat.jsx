@@ -91,10 +91,10 @@ const Chat = () => {
     }, 3000);
     return () => clearInterval(interval);
   }, [conversationId, fetchMessages, navigate]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  //
+  // useEffect(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // }, [messages]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();

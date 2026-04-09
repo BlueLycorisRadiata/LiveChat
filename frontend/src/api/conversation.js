@@ -1,3 +1,5 @@
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
 const getAuthHeaders = () => {
   const token = localStorage.getItem('access_token');
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -21,7 +23,7 @@ const parseResponse = async (response) => {
 };
 
 export const createConversation = async (data) => {
-  const response = await fetch('/conversations', {
+  const response = await fetch(`${API_BASE_URL}/conversations`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -34,7 +36,7 @@ export const createConversation = async (data) => {
 };
 
 export const getConversations = async () => {
-  const response = await fetch('/conversations', {
+  const response = await fetch(`${API_BASE_URL}/conversations`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -46,7 +48,7 @@ export const getConversations = async () => {
 };
 
 export const getConversation = async (id) => {
-  const response = await fetch(`/conversations/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/conversations/${id}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -58,7 +60,7 @@ export const getConversation = async (id) => {
 };
 
 export const deleteConversation = async (id) => {
-  const response = await fetch(`/conversations/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/conversations/${id}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
@@ -70,7 +72,7 @@ export const deleteConversation = async (id) => {
 };
 
 export const updateConversation = async (id, data) => {
-  const response = await fetch(`/conversations/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/conversations/${id}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -83,7 +85,7 @@ export const updateConversation = async (id, data) => {
 };
 
 export const leaveConversation = async (id) => {
-  const response = await fetch(`/conversations/${id}/leave`, {
+  const response = await fetch(`${API_BASE_URL}/conversations/${id}/leave`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -96,7 +98,7 @@ export const leaveConversation = async (id) => {
 
 export const getMessages = async (conversationId, limit = 50, offset = 0) => {
   const response = await fetch(
-      `/conversations/${conversationId}/messages?limit=${limit}&offset=${offset}`,
+      `${API_BASE_URL}/conversations/${conversationId}/messages?limit=${limit}&offset=${offset}`,
       {
         method: 'GET',
         headers: {
@@ -110,7 +112,7 @@ export const getMessages = async (conversationId, limit = 50, offset = 0) => {
 };
 
 export const sendMessage = async (conversationId, data) => {
-  const response = await fetch(`/conversations/${conversationId}/messages`, {
+  const response = await fetch(`${API_BASE_URL}/conversations/${conversationId}/messages`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -124,7 +126,7 @@ export const sendMessage = async (conversationId, data) => {
 
 export const deleteMessage = async (conversationId, messageId) => {
   const response = await fetch(
-      `/conversations/${conversationId}/messages/${messageId}`,
+      `${API_BASE_URL}/conversations/${conversationId}/messages/${messageId}`,
       {
         method: 'DELETE',
         headers: {
@@ -138,7 +140,7 @@ export const deleteMessage = async (conversationId, messageId) => {
 };
 
 export const getAIModels = async () => {
-  const response = await fetch('/ai/models', {
+  const response = await fetch(`${API_BASE_URL}/ai/models`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -150,7 +152,7 @@ export const getAIModels = async () => {
 };
 
 export const getAISettings = async (conversationId) => {
-  const response = await fetch(`/conversations/${conversationId}/ai-settings`, {
+  const response = await fetch(`${API_BASE_URL}/conversations/${conversationId}/ai-settings`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -162,7 +164,7 @@ export const getAISettings = async (conversationId) => {
 };
 
 export const updateAISettings = async (conversationId, data) => {
-  const response = await fetch(`/conversations/${conversationId}/ai-settings`, {
+  const response = await fetch(`${API_BASE_URL}/conversations/${conversationId}/ai-settings`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -178,7 +180,7 @@ export const sendAIMessage = async (conversationId, content, onChunk, onDone, on
   const token = localStorage.getItem('access_token');
   
   try {
-    const response = await fetch(`/conversations/${conversationId}/ai/stream`, {
+    const response = await fetch(`${API_BASE_URL}/conversations/${conversationId}/ai/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

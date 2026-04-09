@@ -105,6 +105,7 @@ type UpdateConversationReq struct {
 func (h *ConversationHandler) UpdateConversation(c *gin.Context) {
 	userID := c.GetInt64("user_id")
 	convID := c.Param("id")
+	fmt.Printf("[DEBUG] UpdateConversation: userID=%d, convID=%s\n", userID, convID)
 	var convIDInt int64
 	_, err := fmt.Sscanf(convID, "%d", &convIDInt)
 	if err != nil {
@@ -117,9 +118,11 @@ func (h *ConversationHandler) UpdateConversation(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	fmt.Printf("[DEBUG] UpdateConversation: title=%s\n", req.Title)
 
 	conv, err := h.convService.UpdateConversation(c.Request.Context(), convIDInt, userID, req.Title)
 	if err != nil {
+		fmt.Printf("[DEBUG] UpdateConversation error: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

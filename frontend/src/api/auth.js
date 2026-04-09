@@ -1,3 +1,5 @@
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
 const parseResponse = async (response) => {
   const contentType = response.headers.get('content-type');
   const isJson = contentType && contentType.includes('application/json');
@@ -21,7 +23,7 @@ const getAuthHeaders = () => {
 };
 
 export const register = async (userData) => {
-  const response = await fetch('/signup', {
+  const response = await fetch(`${API_BASE_URL}/signup`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -33,7 +35,7 @@ export const register = async (userData) => {
 };
 
 export const login = async (credentials) => {
-  const response = await fetch('/login', {
+  const response = await fetch(`${API_BASE_URL}/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -54,13 +56,11 @@ export const logout = async () => {
   }
 
   try {
-    const response = await fetch('/logout', {
+    const response = await fetch(`${API_BASE_URL}/logout`, {
       method: 'POST',
       headers,
     });
-    // Don't need to parse response - just clear local storage
   } catch (e) {
-    // Ignore errors
   } finally {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');

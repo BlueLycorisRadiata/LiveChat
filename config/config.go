@@ -15,6 +15,7 @@ type Config struct {
 	OpenRouterAPIKey  string
 	OpenRouterBaseURL string
 	DefaultAIModel    string
+	CORSOrigins       []string
 }
 
 func IsModelSupported(model string) bool {
@@ -36,9 +37,15 @@ func Load() *Config {
 		baseURL = "https://openrouter.ai/api/v1"
 	}
 
+	corsOrigins := []string{"http://localhost:5173"}
+	if originsEnv := os.Getenv("CORS_ORIGINS"); originsEnv != "" {
+		corsOrigins = []string{originsEnv}
+	}
+
 	return &Config{
 		OpenRouterAPIKey:  os.Getenv("OPENROUTER_API_KEY"),
 		OpenRouterBaseURL: baseURL,
 		DefaultAIModel:    DefaultAIModel,
+		CORSOrigins:       corsOrigins,
 	}
 }
