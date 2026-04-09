@@ -3,6 +3,7 @@ package router
 import (
 	"LiveChat/internal/handler"
 	"LiveChat/middleware"
+	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -10,10 +11,14 @@ import (
 )
 
 var r *gin.Engine
-var jwtSecret = "secret"
 
 func InitRouter(userHandler *handler.Handler, convHandler *handler.ConversationHandler, aiHandler *handler.AIHandler, corsOrigins []string) {
 	r = gin.Default()
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "secret"
+	}
 
 	if len(corsOrigins) == 0 {
 		corsOrigins = []string{"http://localhost:5173"}
