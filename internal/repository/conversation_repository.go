@@ -4,6 +4,7 @@ import (
 	"LiveChat/internal/model"
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -123,6 +124,7 @@ func (r *conversationRepo) DeleteConversation(ctx context.Context, id int64, use
 }
 
 func (r *conversationRepo) UpdateConversation(ctx context.Context, id int64, userID int64, title string) (*model.Conversation, error) {
+	fmt.Printf("[DEBUG] Repo UpdateConversation: id=%d, userID=%d, title=%s\n", id, userID, title)
 	query := `
 		UPDATE conversations
 		SET title = $1, updated_at = NOW()

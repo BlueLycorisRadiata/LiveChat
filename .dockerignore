@@ -1,0 +1,9 @@
+.git
+.idea
+.vscode
+*.md
+frontend/node_modules
+frontend/dist
+.gitignore
+.env
+vercel.json

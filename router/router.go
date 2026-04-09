@@ -5,8 +5,6 @@ import (
 	"LiveChat/middleware"
 	"time"
 
-	"LiveChat/ws"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -14,22 +12,18 @@ import (
 var r *gin.Engine
 var jwtSecret = "secret"
 
-func InitRouter(userHandler *handler.Handler, wsHandler *ws.Handler, convHandler *handler.ConversationHandler, aiHandler *handler.AIHandler) {
+func InitRouter(userHandler *handler.Handler, convHandler *handler.ConversationHandler, aiHandler *handler.AIHandler, corsOrigins []string) {
 	r = gin.Default()
 
+	if len(corsOrigins) == 0 {
+		corsOrigins = []string{"http://localhost:5173"}
+	}
+
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{
-			"http://localhost:5173",
-		},
-		AllowMethods: []string{
-			"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS",
-		},
-		AllowHeaders: []string{
-			"Origin", "Content-Type", "Accept", "Authorization",
-		},
-		ExposeHeaders: []string{
-			"Content-Length",
-		},
+		AllowOrigins:     corsOrigins,
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
