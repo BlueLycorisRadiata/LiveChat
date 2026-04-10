@@ -21,7 +21,7 @@ func InitRouter(userHandler *handler.Handler, convHandler *handler.ConversationH
 	}
 
 	if len(corsOrigins) == 0 {
-		corsOrigins = []string{"http://localhost:5173", "https://livechat-lamd.onrender.com"}
+		corsOrigins = []string{"http://localhost:5173", "https://live-chat-frontend-sage.vercel.app"}
 	}
 
 	r.Use(cors.New(cors.Config{

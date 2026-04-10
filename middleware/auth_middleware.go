@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -26,8 +25,15 @@ func extractUserID(claims *Claims) (int64, error) {
 
 func AuthMiddleware(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Skip authentication for CORS preflight requests.
+		// The browser sends OPTIONS without an Authorization header to check CORS policy;
+		// blocking it here causes the browser to report a CORS error.
+		if c.Request.Method == http.MethodOptions {
+			c.Next()
+			return
+		}
+
 		authHeader := c.GetHeader("Authorization")
-		fmt.Printf("[DEBUG] Auth header: %s\n", authHeader)
 
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization header required"})
@@ -48,8 +54,6 @@ func AuthMiddleware(secret string) gin.HandlerFunc {
 			return
 		}
 
-		fmt.Printf("[DEBUG] Token: %s\n", tokenString)
-
 		claims := &Claims{}
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -57,12 +61,6 @@ func AuthMiddleware(secret string) gin.HandlerFunc {
 			}
 			return []byte(secret), nil
 		})
-
-		if err != nil {
-			fmt.Printf("[DEBUG] Parse error: %v\n", err)
-		}
-
-		fmt.Printf("[DEBUG] Token valid: %v, Claims: %+v\n", token.Valid, claims)
 
 		if err != nil || !token.Valid {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token: " + err.Error()})
