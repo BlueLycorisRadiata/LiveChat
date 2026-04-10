@@ -43,7 +43,7 @@ func Load() *Config {
 
 	corsOrigins := []string{
 		"http://localhost:5173",
-		"https://live-chat-frontend-sage.vercel.app",
+		"https://live-chat-frontend-lac.vercel.app",
 	}
 
 	if originsEnv := os.Getenv("CORS_ORIGINS"); originsEnv != "" {
