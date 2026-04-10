@@ -17,10 +17,6 @@ import (
 func main() {
 	_ = godotenv.Load()
 
-	for _, env := range os.Environ() {
-		log.Println(env)
-	}
-
 	cfg := config.Load()
 
 	dbConn, err := db.NewDatabase()
