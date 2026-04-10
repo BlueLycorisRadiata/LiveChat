@@ -1,22 +1,23 @@
 services:
   - type: web
     name: livechat-backend
-    env: go
-    buildCommand: go build -o livechat ./cmd/main.go
-    startCommand: ./livechat
+    docker:
+      dockerfile: Dockerfile
+      context: .
     envVars:
       - key: PORT
         value: "8080"
+      - key: DB_SOURCE
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGINS
-        value: "http://localhost:5173"
-    disk:
-      mountPath: /app
-      readOnly: false
-      sizeGB: 1
-
-databases:
-  - name: livechat-db
-    type: postgresql
-    plan: free
+        value: "*"
+      - key: OPENROUTER_API_KEY
+        sync: false
+    healthCheck:
+      path: /health
+      interval: 30
+      timeout: 10
+      retries: 3
+      startupDelay: 15
