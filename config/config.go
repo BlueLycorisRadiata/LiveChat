@@ -8,6 +8,9 @@ import (
 var SupportedAIModels = []string{
 	"nvidia/nemotron-nano-9b-v2:free",
 	"nvidia/nemotron-3-super-120b-a12b:free",
+	"google/gemma-4-26b-a4b-it:free",
+	"arcee-ai/trinity-large-preview:free",
+	"openai/gpt-oss-120b:free",
 }
 
 var DefaultAIModel = "nvidia/nemotron-3-super-120b-a12b:free"
