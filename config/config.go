@@ -1,11 +1,12 @@
 package config
 
-import "os"
+import (
+	"os"
+	"strings"
+)
 
 var SupportedAIModels = []string{
 	"nvidia/nemotron-nano-9b-v2:free",
-	"minimax/minimax-m2.5:free",
-	"qwen/qwen3.6-plus:free",
 	"nvidia/nemotron-3-super-120b-a12b:free",
 }
 
@@ -37,9 +38,20 @@ func Load() *Config {
 		baseURL = "https://openrouter.ai/api/v1"
 	}
 
-	corsOrigins := []string{"http://localhost:5173"}
+	corsOrigins := []string{
+		"http://localhost:5173",
+		"https://live-chat-frontend-sage.vercel.app",
+	}
+
 	if originsEnv := os.Getenv("CORS_ORIGINS"); originsEnv != "" {
-		corsOrigins = []string{originsEnv}
+		parts := strings.Split(originsEnv, ",")
+		corsOrigins = make([]string, 0, len(parts))
+		for _, origin := range parts {
+			origin = strings.TrimSpace(origin)
+			if origin != "" {
+				corsOrigins = append(corsOrigins, origin)
+			}
+		}
 	}
 
 	return &Config{
