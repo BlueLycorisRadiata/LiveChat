@@ -12,7 +12,10 @@ type Database struct {
 }
 
 func NewDatabase() (*Database, error) {
-	dbURL := os.Getenv("DATABASE_URL")
+	dbURL := os.Getenv("DB_SOURCE")
+	if dbURL == "" {
+		dbURL = os.Getenv("DATABASE_URL")
+	}
 	if dbURL == "" {
 		dbURL = "postgresql://root:password@localhost:5433/go-chat?sslmode=disable"
 	}
