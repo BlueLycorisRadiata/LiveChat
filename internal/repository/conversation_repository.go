@@ -17,6 +17,10 @@ type ConversationRepository interface {
 	AddParticipant(ctx context.Context, convID int64, userID int64, role model.ParticipantRole) error
 	RemoveParticipant(ctx context.Context, convID int64, userID int64) error
 	GetParticipants(ctx context.Context, convID int64) ([]model.ConversationParticipant, error)
+	GetParticipantRole(ctx context.Context, convID int64, userID int64) (model.ParticipantRole, error)
+	CountActiveParticipants(ctx context.Context, convID int64) (int, error)
+	UpdateParticipantRole(ctx context.Context, convID int64, userID int64, role model.ParticipantRole) error
+	IsParticipant(ctx context.Context, convID int64, userID int64) (bool, error)
 }
 
 type conversationRepo struct {
@@ -165,7 +169,7 @@ func (r *conversationRepo) RemoveParticipant(ctx context.Context, convID int64, 
 
 func (r *conversationRepo) GetParticipants(ctx context.Context, convID int64) ([]model.ConversationParticipant, error) {
 	query := `
-		SELECT cp.id, cp.conversation_id, cp.user_id, cp.role, cp.joined_at, cp.left_at, 
+		SELECT cp.id, cp.conversation_id, cp.user_id, cp.joined_at, cp.left_at, 
 		       cp.deleted_at, cp.last_read_message_id, cp.last_read_at, cp.created_at, cp.updated_at,
 		       u.id, u.username, u.email
 		FROM conversation_participants cp
@@ -178,12 +182,12 @@ func (r *conversationRepo) GetParticipants(ctx context.Context, convID int64) ([
 	}
 	defer rows.Close()
 
-	var participants []model.ConversationParticipant
+	participants := []model.ConversationParticipant{}
 	for rows.Next() {
 		var p model.ConversationParticipant
 		var u model.User
 		err := rows.Scan(
-			&p.ID, &p.ConversationID, &p.UserID, &p.Role, &p.JoinedAt, &p.LeftAt,
+			&p.ID, &p.ConversationID, &p.UserID, &p.JoinedAt, &p.LeftAt,
 			&p.DeletedAt, &p.LastReadMessageID, &p.LastReadAt, &p.CreatedAt, &p.UpdatedAt,
 			&u.ID, &u.Username, &u.Email,
 		)
@@ -194,5 +198,69 @@ func (r *conversationRepo) GetParticipants(ctx context.Context, convID int64) ([
 		participants = append(participants, p)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return participants, nil
+}
+
+func (r *conversationRepo) GetParticipantRole(ctx context.Context, convID int64, userID int64) (model.ParticipantRole, error) {
+	query := `
+		SELECT role FROM conversation_participants
+		WHERE conversation_id = $1 AND user_id = $2 AND deleted_at IS NULL`
+
+	var role model.ParticipantRole
+	err := r.db.QueryRowContext(ctx, query, convID, userID).Scan(&role)
+	if err != nil {
+		return "", err
+	}
+	return role, nil
+}
+
+func (r *conversationRepo) CountActiveParticipants(ctx context.Context, convID int64) (int, error) {
+	query := `
+		SELECT COUNT(*) FROM conversation_participants
+		WHERE conversation_id = $1 AND deleted_at IS NULL`
+
+	var count int
+	err := r.db.QueryRowContext(ctx, query, convID).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *conversationRepo) UpdateParticipantRole(ctx context.Context, convID int64, userID int64, role model.ParticipantRole) error {
+	query := `
+		UPDATE conversation_participants
+		SET role = $1, updated_at = NOW()
+		WHERE conversation_id = $2 AND user_id = $3 AND deleted_at IS NULL`
+
+	result, err := r.db.ExecContext(ctx, query, role, convID, userID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}
+
+func (r *conversationRepo) IsParticipant(ctx context.Context, convID int64, userID int64) (bool, error) {
+	query := `
+		SELECT EXISTS(
+			SELECT 1 FROM conversation_participants
+			WHERE conversation_id = $1 AND user_id = $2 AND deleted_at IS NULL
+		)`
+
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, convID, userID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
 }

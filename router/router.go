@@ -54,6 +54,11 @@ func InitRouter(userHandler *handler.Handler, convHandler *handler.ConversationH
 		auth.POST("/conversations/:id/messages", convHandler.SendMessage)
 		auth.DELETE("/conversations/:id/messages/:messageId", convHandler.DeleteMessage)
 
+		// Membership management routes
+		auth.GET("/conversations/:id/members", convHandler.GetMembers)
+		auth.POST("/conversations/:id/members", convHandler.AddMember)
+		auth.DELETE("/conversations/:id/members/:userId", convHandler.RemoveMember)
+
 		// AI routes
 		auth.GET("/ai/models", aiHandler.ListModels)
 		auth.POST("/conversations/:id/ai/stream", aiHandler.StreamMessage)

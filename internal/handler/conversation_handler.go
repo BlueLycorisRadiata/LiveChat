@@ -245,3 +245,102 @@ func (h *ConversationHandler) DeleteMessage(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "message deleted"})
 }
+
+type AddMemberReq struct {
+	UserID int64 `json:"user_id" binding:"required"`
+}
+
+func (h *ConversationHandler) AddMember(c *gin.Context) {
+	requesterID := c.GetInt64("user_id")
+
+	convID := c.Param("id")
+	var convIDInt int64
+	_, err := fmt.Sscanf(convID, "%d", &convIDInt)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid conversation id"})
+		return
+	}
+
+	var req AddMemberReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = h.convService.AddMember(c.Request.Context(), convIDInt, requesterID, req.UserID)
+	if err != nil {
+		status := http.StatusInternalServerError
+		errMsg := err.Error()
+		if errMsg == "cannot add members to a private conversation" ||
+			errMsg == "cannot add members to an AI conversation" ||
+			errMsg == "user is already a member of this conversation" {
+			status = http.StatusBadRequest
+		} else if errMsg == "only admins or owners can add members" ||
+			errMsg == "you are not a participant of this conversation" {
+			status = http.StatusForbidden
+		}
+		c.JSON(status, gin.H{"error": errMsg})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "member added"})
+}
+
+func (h *ConversationHandler) RemoveMember(c *gin.Context) {
+	requesterID := c.GetInt64("user_id")
+
+	convID := c.Param("id")
+	var convIDInt int64
+	_, err := fmt.Sscanf(convID, "%d", &convIDInt)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid conversation id"})
+		return
+	}
+
+	targetUserID := c.Param("userId")
+	var targetUserIDInt int64
+	_, err = fmt.Sscanf(targetUserID, "%d", &targetUserIDInt)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+
+	err = h.convService.RemoveMember(c.Request.Context(), convIDInt, requesterID, targetUserIDInt)
+	if err != nil {
+		status := http.StatusInternalServerError
+		errMsg := err.Error()
+		if errMsg == "cannot remove members from a private conversation" ||
+			errMsg == "cannot remove members from an AI conversation" ||
+			errMsg == "cannot remove the owner of the conversation" {
+			status = http.StatusBadRequest
+		} else if errMsg == "only admins or owners can remove members" ||
+			errMsg == "only the owner can remove an admin" ||
+			errMsg == "you are not a participant of this conversation" {
+			status = http.StatusForbidden
+		} else if errMsg == "target user is not a participant of this conversation" {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{"error": errMsg})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "member removed"})
+}
+
+func (h *ConversationHandler) GetMembers(c *gin.Context) {
+	convID := c.Param("id")
+	var convIDInt int64
+	_, err := fmt.Sscanf(convID, "%d", &convIDInt)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid conversation id"})
+		return
+	}
+
+	members, err := h.convService.GetMembers(c.Request.Context(), convIDInt)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": members})
+}
