@@ -13,8 +13,22 @@ const (
 
 const (
 	ParticipantRoleOwner  ParticipantRole = "owner"
+	ParticipantRoleAdmin  ParticipantRole = "admin"
 	ParticipantRoleMember ParticipantRole = "member"
 )
+
+func (r ParticipantRole) IsValid() bool {
+	switch r {
+	case ParticipantRoleOwner, ParticipantRoleAdmin, ParticipantRoleMember:
+		return true
+	default:
+		return false
+	}
+}
+
+func (r ParticipantRole) CanManageMembers() bool {
+	return r == ParticipantRoleOwner || r == ParticipantRoleAdmin
+}
 
 const (
 	MessageTypeText   MessageType = "text"

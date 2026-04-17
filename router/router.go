@@ -21,7 +21,7 @@ func InitRouter(userHandler *handler.Handler, convHandler *handler.ConversationH
 	}
 
 	if len(corsOrigins) == 0 {
-		corsOrigins = []string{"http://localhost:5173", "https://livechat-lamd.onrender.com"}
+		corsOrigins = []string{"http://localhost:5173", "live-chat-frontend-five.vercel.app"}
 	}
 
 	r.Use(cors.New(cors.Config{
@@ -53,6 +53,11 @@ func InitRouter(userHandler *handler.Handler, convHandler *handler.ConversationH
 		auth.GET("/conversations/:id/messages", convHandler.GetMessages)
 		auth.POST("/conversations/:id/messages", convHandler.SendMessage)
 		auth.DELETE("/conversations/:id/messages/:messageId", convHandler.DeleteMessage)
+
+		// Membership management routes
+		auth.GET("/conversations/:id/members", convHandler.GetMembers)
+		auth.POST("/conversations/:id/members", convHandler.AddMember)
+		auth.DELETE("/conversations/:id/members/:userId", convHandler.RemoveMember)
 
 		// AI routes
 		auth.GET("/ai/models", aiHandler.ListModels)
